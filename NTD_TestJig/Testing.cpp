@@ -6,8 +6,8 @@
  * Target:                  Arduino Uno
  * Copyright:               Doayee 2018
  * Description:             Handles the test functionality of the NTD. Please
- * 							see [insert doc here] for detailed description of
- * 							functionality.
+ * 							see Nixie Tube Driver Test Jig.docx for detailed 
+ *							description of functionality.
  ******************************************************************************/
 
 /*******************************************************************************
