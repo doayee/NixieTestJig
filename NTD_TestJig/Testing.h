@@ -36,6 +36,9 @@
 void ChangeSegment(uint8_t segment);
 void SwitchDigit(uint8_t segment, uint8_t digit);
 uint8_t ReadEncoder();
-void TestSegment(uint8_t segment);
+void TestSegments();
+void TestDigits(uint8_t segment);
+void TestDP(uint8_t segment);
+void TestZero(uint8_t segment);
 
 #endif /* TESTING_H_ */

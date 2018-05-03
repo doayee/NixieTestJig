@@ -6,8 +6,9 @@
  * Target:                  Arduino Uno
  * Copyright:               Doayee 2018
  * Description:             Handles the test functionality of the NTD. Please
- * 							see Nixie Tube Driver Test Jig.docx for detailed 
- *							description of functionality.
+ * 							see [Nixie Tube Driver Test Jig.docx] and 
+ * 							accompanying flowchart [Test Sequence Flowchart.png]
+ *							for detailed description of functionality. 
  ******************************************************************************/
 
 /*******************************************************************************
@@ -115,56 +116,79 @@ uint8_t ReadEncoder()
 }
 
 /*******************************************************************************
- * Name:	TestSegment(uint8_t segment)
- * Inputs:	uint8_t segment - the segment we wish to test (0->5)
+ * Name:	TestSegments()
+ * Inputs:	None.
  * Return:	None.
- * Notes: 	Tests a segment and adds any errors to the queue.
+ * Notes: 	Tests all segments and adds any errors to the queue.
  ******************************************************************************/
-void TestSegment(uint8_t segment)
+void TestSegments()
 {
 	Error_t err;
-	err.segment = segment;
-	err.next = NULL;
 
-	ChangeSegment(segment);
-	delay(10);
-
-	if(!digitalRead(SENSE_HV))
+	for(uint8_t segment = 0; segment < 6; segment++)
 	{
-		err.testDigit = HV;
-		err.digit = HV;
-		err.error = OPEN;
-		EnqueueError(&err);
+		err.segment = segment;
+		err.next = NULL;
+
+		ChangeSegment(segment);
+		delay(10);
+
+		if(!digitalRead(SENSE_HV))
+		{
+			err.testDigit = HV;
+			err.digit = HV;
+			err.error = OPEN;
+			EnqueueError(&err);
+		}
+
+		/* Make note of the test digit */
+		err.testDigit = BLANKED;
+
+		/* Test that none of the digits are on by default */
+		blank_display();
+
+		/* If there is a digit on report it back */
+		if(ReadEncoder() != 0) {
+			err.digit = (Digit_et)ReadEncoder();
+			err.error = SHORT;
+			EnqueueError(&err);
+		}
+
+		/* If the 0 is on */
+		if(!digitalRead(SENSE_0))
+		{
+			err.digit = ZERO;
+			err.error = SHORT;
+			EnqueueError(&err);
+		}
+
+		/* If the DP is on */
+		if(!digitalRead(SENSE_DP))
+		{
+			err.digit = DP;
+			err.error = SHORT;
+			EnqueueError(&err);
+		}
+
+		TestDigits(segment);
+
+		TestZero(segment);
+
+		TestDP(segment);
 	}
 
-	/* Make note of the test digit */
-	err.testDigit = BLANKED;
+}
 
-	/* Test that none of the digits are on by default */
-	blank_display();
+/*******************************************************************************
+ * Name:	TestDigits(uint8_t segment)
+ * Inputs:	uint8_t segment - the current segment.
+ * Return:	None.
+ * Notes: 	Tests all digits on a segment and adds any errors to the queue.
+ ******************************************************************************/
+void TestDigits(uint8_t segment)
+{
 
-	/* If there is a digit on report it back */
-	if(ReadEncoder() != 0) {
-		err.digit = (Digit_et)ReadEncoder();
-		err.error = SHORT;
-		EnqueueError(&err);
-	}
-
-	/* If the 0 is on */
-	if(!digitalRead(SENSE_0))
-	{
-		err.digit = ZERO;
-		err.error = SHORT;
-		EnqueueError(&err);
-	}
-
-	/* If the DP is on */
-	if(!digitalRead(SENSE_DP))
-	{
-		err.digit = DP;
-		err.error = SHORT;
-		EnqueueError(&err);
-	}
+	Error_t err;
 
 	/* Check each digit 1->9 */
 	for(uint8_t index = 1; index < 10; index++)
@@ -210,6 +234,17 @@ void TestSegment(uint8_t segment)
 			EnqueueError(&err);
 		}
 	}
+}
+
+/*******************************************************************************
+ * Name:	TestZero(uint8_t segment)
+ * Inputs:	uint8_t segment - the current segment.
+ * Return:	None.
+ * Notes: 	Tests the zero on a segment and adds any errors to the queue.
+ ******************************************************************************/
+void TestZero(uint8_t segment)
+{
+	Error_t err;
 
 	/* Make note of the test digit */
 	err.testDigit = ZERO;
@@ -241,17 +276,28 @@ void TestSegment(uint8_t segment)
 		err.error = SHORT;
 		EnqueueError(&err);
 	}
+}
 
+/*******************************************************************************
+ * Name:	TestDP(uint8_t segment)
+ * Inputs:	uint8_t segment - the current segment.
+ * Return:	None.
+ * Notes: 	Tests the DP on a segment and adds any errors to the queue.
+ ******************************************************************************/
+void TestDP(uint8_t segment)
+{
 	/* No need to do 1st segment DP */
 	if(segment == 0) return;
+
+	Error_t err;
 
 	/* Make note of the test digit */
 	err.testDigit = DP;
 
 	/* Turn DP on */
-    nix.setDecimalPoint(segment - 1, true); //setDecimalPoint(0, 1) will turn on the DP AFTER the
-    										//0th digit i.e. segment 1.
-    blank_display();
+	nix.setDecimalPoint(segment - 1, true); //setDecimalPoint(0, 1) will turn on the DP AFTER the
+											//0th digit i.e. segment 1.
+	blank_display();
 
 	/* If DP is "OFF" */
 	if(digitalRead(SENSE_DP))
@@ -278,4 +324,5 @@ void TestSegment(uint8_t segment)
 		EnqueueError(&err);
 	}
 }
+
 

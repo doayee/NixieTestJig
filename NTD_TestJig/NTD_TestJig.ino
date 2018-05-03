@@ -74,7 +74,10 @@ void loop()
 
 	/* When a NTD is connected */
 	Serial.println("NTD Detected... Starting Test in 100ms.");
-	delay(100);
+
+	/* Fade the RGBs in */
+	rgb.fadeIn(rgb.white, 100);
+
 	Serial.println("Starting test.");
 
 	Serial.println("RGB Test Begin.");
@@ -82,14 +85,8 @@ void loop()
 
 	/* Test the digits */
 	Serial.println("Functional Test Begin.");
-	for(uint8_t i = 0; i < 6; i++)
-	{
-		Serial.print("Testing segment: ");
-		Serial.println(i);
-		TestSegment(i);
-		Serial.print("Total Error Count: ");
-		Serial.println(errorCount);
-	}
+
+	TestSegments();
 
 	Serial.println("Functional Test End.");
 	Serial.println("RGB Test End.");
@@ -111,6 +108,7 @@ void loop()
 		Serial.println("***                    FAIL                    ***");
 		Serial.println("**************************************************");
 		Serial.println();
+		rgb.setColour(rgb.red);
 
 		void ParseQueue(Error_t *node);
 
@@ -124,6 +122,9 @@ void loop()
 
 	/* Turn the LED off */
 	digitalWrite(LED, 0);
+
+	/* Turn the RGBs off */
+	rgb.setColour(rgb.black);
 
 	/* Wait for NTD */
 	while(digitalRead(SENSE_HV));
